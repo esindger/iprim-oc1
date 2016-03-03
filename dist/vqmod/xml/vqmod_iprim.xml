@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<modification>
+    <id>VQMOD CORE FOR IPRIM MARKET</id>
+    <version>1.4.x and above</version>
+    <vqmver required="true">2.5.0</vqmver>
+    <author>iprim.ru</author>
+
+    <file name="/admin/model/sale/order.php">
+        <!-- Delete order handle -->
+        <operation>
+            <search position="after">
+                <![CDATA[DELETE `or`]]></search>
+
+            <add><![CDATA[
+                $this->load->model('iprim/response');
+		        $this->model_iprim_response->handleDelete($order_id);
+      ]]></add>
+        </operation>
+        <!-- History change handle -->
+        <operation>
+            <search position="after">
+                <![CDATA[INSERT INTO " . DB_PREFIX . "order_history]]></search>
+
+            <add><![CDATA[
+                $this->load->model('iprim/response');
+		        $this->model_iprim_response->handleChange($order_id);
+      ]]></add>
+        </operation>
+    </file>
+
+    <file name="/catalog/controller/checkout/success.php">
+        <!-- Add order handle -->
+        <operation>
+            <search position="after"><![CDATA[unset($this->session->data['totals']);]]></search>
+
+            <add><![CDATA[
+                if(isset($this->session->data['iprim']['response'])) {
+                    $response = $this->session->data['iprim']['response'];
+                    unset($this->session->data['iprim']['response']);
+                    $this->load->model('iprim/response');
+                    $this->model_iprim_response->send($response['uid'], $response['params']);
+                }
+      ]]></add>
+        </operation>
+    </file>
+
+    <file name="/catalog/model/checkout/order.php">
+        <!-- Change order status handle -->
+        <operation>
+            <search position="before"><![CDATA[$template->data['totals'] = $order_total_query->rows;]]></search>
+
+            <add><![CDATA[
+                $this->load->model('iprim/response');
+			    $this->model_iprim_response->handleChange($order_id);
+      ]]></add>
+        </operation>
+    </file>
+
+    <file name="/system/startup.php">
+        <!-- Startup -->
+        <operation>
+            <search position="before"><![CDATA[?>]]></search>
+
+            <add><![CDATA[
+                require_once(DIR_SYSTEM . 'vendor/Iprim.php');
+      ]]></add>
+        </operation>
+    </file>
+
+</modification>
